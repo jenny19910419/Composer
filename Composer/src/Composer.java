@@ -8,35 +8,53 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.sound.midi.Sequence;
+
 
 public class Composer {
 	
-	static String filename;
+	static String filename; //the filename for generating patterns
 	static String readInPath = " /Users/jzhaoaf/Desktop/";
 	static String outputPath;
 	static int MIN = 3;
 	static int MAX = 20;
 	static int THRESHOLD = 15;
 	static ArrayList <Map<ArrayList<Integer>, ArrayList<Integer> > > patternPools; 
-	//static Map<ArrayList<Integer>, ArrayList<Integer>>[] patternPools;
-
+	static Sequence sequence;  
+	static MidiPlayer myPlayer;
+	static String lrcFilename; 
 	
 	public static void main(String[] args) {
 
+		//initialize the patternPools
 		patternPools = new  ArrayList<Map<ArrayList<Integer>, ArrayList<Integer> > >();
 		for(int i = 0 ; i < MIN; ++i) {
 			patternPools.add(new HashMap<ArrayList<Integer>, ArrayList<Integer> >());
 		}
 		
-		int[] list = new int[3];
+		
 		try {
 			singleTest();
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		//batchTest(Folder);
 		
+		//batchTest(new Folder());
+		sequence = generateSequence(filename);
+		
+		//play the generate sequence
+		myPlayer = new MidiPlayer();
+		myPlayer.play(sequence, false);
+		
+	}
+
+	private static Sequence generateSequence(String filename) {
+		// TODO Auto-generated method stub
+		//generate sequence for lrc files
+		
+		
+		return null;
 	}
 
 	private static void singleTest() throws FileNotFoundException {
