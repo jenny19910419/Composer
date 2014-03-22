@@ -25,7 +25,7 @@ public class Composer {
 	static MidiPlayer myPlayer;
 	static String lrcFilename; 
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws FileNotFoundException {
 
 		//initialize the patternPools
 		patternPools = new  ArrayList<Map<ArrayList<Integer>, ArrayList<Integer> > >();
@@ -41,36 +41,127 @@ public class Composer {
 			e.printStackTrace();
 		}
 		
+		
+		/*System.out.println("final");
+		for(int i = 0 ; i <= MAX; ++i) {
+			System.out.println("size" + (i-1) + "count");
+			Map<ArrayList<Integer>, ArrayList<Integer> > map = patternPools.get(i);
+			System.out.println(map);
+			System.out.println(map.size());
+			
+		}*/
+		
 		//batchTest(new Folder());
-		sequence = generateSequence(filename);
+		ArrayList<Integer> sequenceArray = generateSequenceArray(filename);
+		//sequence = generateSequence(sequenceArray);
 		
 		//play the generate sequence
-		myPlayer = new MidiPlayer();
-		myPlayer.play(sequence, false);
+		//myPlayer = new MidiPlayer();
+		//myPlayer.play(sequence, false);
 		
 	}
 
-	private static Sequence generateSequence(String filename) {
+	private static Sequence generateSequence(ArrayList<Integer> sequenceArray) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private static ArrayList<Integer> generateSequenceArray(String filename) throws FileNotFoundException {
 		// TODO Auto-generated method stub
 		//generate sequence for lrc files
 		ArrayList<Integer> lrc = new ArrayList<Integer>();
 		ArrayList<Integer> melo = new ArrayList<Integer>();
 		
+		ArrayList<Integer> result = new ArrayList<Integer>();
 		//suppose given lrc sequence; change later
-		Random random = new Random();
+		/*Random random = new Random();
 		for(int i = 0 ; i < 100; ++i) {
-			lrc.add(new Integer(random.nextInt(10)));
+			lrc.add(new Integer(random.nextInt(8)));
+		}*/
+		
+		ArrayList<Integer> lrcTemp = verify("/Users/jzhaoaf/Desktop/50_cent-in_da_club.txt");
+		ArrayList<Integer> verifyArray = new ArrayList<Integer>();
+		
+		//calculate the relative value
+		//System.out.println(lrcTemp.size());
+		for(int i = 0; i < lrcTemp.size()-1;++i) {
+			lrc.add(new Integer(lrcTemp.get(i+1) - lrcTemp.get(i)));
 		}
+		//System.out.println(lrc.size());
+		//System.out.println(lrc);
+	
+		int startPos = 0;
+		int sum = 0;
+		
+		while(startPos < lrc.size() - MIN) {
+			
+			//int newPos = find(lrc,startPos);
+			boolean find = false;
+			for(int i = MAX; i >= MIN; i--) {
+				
+				ArrayList<Integer> searchResult;
+				//System.out.print("test size " + i);
+				ArrayList<Integer> temp = new ArrayList<Integer>();
+				for(int j = startPos; j < startPos + i && j < lrc.size(); ++j) {
+					temp.add(lrc.get(j));	
+				}
+				
+				//System.out.println("target" + temp);
+				//System.out.println("pool " + patternPools.get(i+1));
+				
+				if(patternPools.get(i+1).get(temp)!=null) {
+					searchResult = patternPools.get(i+1).get(temp);
+					startPos += i;
+					//System.out.println("find" + searchResult +  " for" + temp);
+					verifyArray.addAll(temp);
+					find = true;
+					sum+=i+1;
+					result.addAll(searchResult);
+					break;
+				}
+				else {
+					//System.out.println("not found for pattern size " + i + temp);
+					
+				}
+					
+			}
+			if(find == false) {
+				//System.out.println("not found for all size");
+				startPos++;
+				result.add(new Integer(0));
+				verifyArray.add(new Integer(0));
+			}
+		}
+		/*System.out.println("the original  array is "+ lrc);
+		System.out.println("the recombine array is " + verifyArray);
+		System.out.println(verifyArray.size());
+		System.out.println(lrc.size());
+		System.out.println(result.size());*/
 		
 		
-		
-		
-		
-		
-		
-		return null;
+		return result;
 	}
 	
+	private static ArrayList<Integer> verify(String filename) throws FileNotFoundException {
+		// TODO Auto-generated method stub
+		ArrayList<Integer> result = new ArrayList<Integer>();
+		Scanner s = new Scanner(new File(filename));
+		String line;
+		while(s.hasNextLine()) {
+			
+			line = s.nextLine();//System.out.println(line);
+			int pos = line.indexOf(',');
+			int nextPos = line.indexOf(',', pos+1);
+			int first = Integer.parseInt(line.substring(pos+1,nextPos));//System.out.println("first" + line.substring(pos+1,nextPos));
+			pos = line.lastIndexOf(',');//System.out.println("second" + line.substring(pos+1));
+			int second = Integer.parseInt(line.substring(pos+1));
+			//System.out.println(first+ " " + second);
+			first = first * 3 + second;
+			result.add(new Integer(first));
+		}
+		return result;
+	}
+
 	public static String lcs(String a, String b) {
 	    int[][] lengths = new int[a.length()+1][b.length()+1];
 	 
@@ -105,7 +196,7 @@ public class Composer {
 
 	private static void singleTest() throws FileNotFoundException {
 		// TODO Auto-generated method stub
-		readInPatterns("/Users/jzhaoaf/Desktop/allPattern15.txt");
+		readInPatterns("/Users/jzhaoaf/Desktop/allPattern4.txt");
 	}
 
 	private static void readInPatterns(String filename) throws FileNotFoundException {
@@ -119,6 +210,7 @@ public class Composer {
 		Map<ArrayList<Integer>, ArrayList<Integer> > currentMap = new HashMap<ArrayList<Integer>, ArrayList<Integer> > ();
 		
 		int size = MIN;
+	
 		
 		while(s.hasNextLine()) {
 			
@@ -172,9 +264,9 @@ public class Composer {
 		}
 		
 		//test 
-		/*System.out.println("final");
-		for(int i = 0 ; i <= MAX; ++i) {
-			System.out.println("size" + (i-1) + "count");
+		//System.out.println("final");
+		//System.out.println(patternPools.get(4));
+		/*for(int i = 0 ; i <= MAX; ++i) {
 			Map<ArrayList<Integer>, ArrayList<Integer> > map = patternPools.get(i);
 			System.out.println(map);
 			System.out.println(map.size());
