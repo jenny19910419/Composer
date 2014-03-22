@@ -1,5 +1,6 @@
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,7 +10,14 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MetaMessage;
+import javax.sound.midi.MidiEvent;
+import javax.sound.midi.MidiSystem;
 import javax.sound.midi.Sequence;
+import javax.sound.midi.ShortMessage;
+import javax.sound.midi.SysexMessage;
+import javax.sound.midi.Track;
 
 
 public class Composer {
@@ -24,8 +32,9 @@ public class Composer {
 	static Sequence sequence;  
 	static MidiPlayer myPlayer;
 	static String lrcFilename; 
+	static int resolution = 480;
 	
-	public static void main(String[] args) throws FileNotFoundException {
+	public static void main(String[] args) throws InvalidMidiDataException, IOException {
 
 		//initialize the patternPools
 		patternPools = new  ArrayList<Map<ArrayList<Integer>, ArrayList<Integer> > >();
@@ -53,17 +62,113 @@ public class Composer {
 		
 		//batchTest(new Folder());
 		ArrayList<Integer> sequenceArray = generateSequenceArray(filename);
-		//sequence = generateSequence(sequenceArray);
+		sequence = generateSequence(sequenceArray);
+		
+		//test
+		//sequence = MidiSystem.getSequence(new File("/Users/jzhaoaf/Desktop/2_hearts.mid"));
+		//System.out.println(sequence.getResolution());  //Resolution is 480
 		
 		//play the generate sequence
-		//myPlayer = new MidiPlayer();
-		//myPlayer.play(sequence, false);
+		myPlayer = new MidiPlayer();
+		myPlayer.play(sequence, false);
 		
 	}
 
-	private static Sequence generateSequence(ArrayList<Integer> sequenceArray) {
+	private static Sequence generateSequence(ArrayList<Integer> array) throws InvalidMidiDataException, IOException {
 		// TODO Auto-generated method stub
-		return null;
+		Sequence sequence = new Sequence(Sequence.PPQ, resolution);
+		Track t = sequence.createTrack();
+		
+		//Turn on General MIDI sound set
+		byte[] b = {(byte)0xF0, 0x7E, 0x7F, 0x09, 0x01, (byte)0xF7};
+		SysexMessage sm = new SysexMessage();
+		sm.setMessage(b, 6);
+		MidiEvent me = new MidiEvent(sm,(long)0);
+		t.add(me);
+		
+		//set tempo
+		MetaMessage mt = new MetaMessage();
+        byte[] bt = {0x02, (byte)0x00, 0x00};
+		mt.setMessage(0x51 ,bt, 3);
+		me = new MidiEvent(mt,(long)0);
+		t.add(me);
+		
+		//set trackname
+		mt = new MetaMessage();
+		String TrackName = new String("midifile track");
+		mt.setMessage(0x03 ,TrackName.getBytes(), TrackName.length());
+		me = new MidiEvent(mt,(long)0);
+		t.add(me);
+		
+		//set omni on
+		ShortMessage mm = new ShortMessage();
+		mm.setMessage(0xB0, 0x7D,0x00);
+		me = new MidiEvent(mm,(long)0);
+		t.add(me);
+		
+		//set ploy on
+		mm = new ShortMessage();
+		mm.setMessage(0xB0, 0x7F,0x00);
+		me = new MidiEvent(mm,(long)0);
+		t.add(me);
+		
+		//set Instrument to Piano
+		mm = new ShortMessage();
+		mm.setMessage(0xC0, 0x00, 0x00);
+		me = new MidiEvent(mm,(long)0);
+		t.add(me);
+		
+		//middle part
+		int pitch = 0x3C;  //start with middle C
+		for(int i = 0; i < array.size(); ++i) {
+			
+			//System.out.println("get into here" + i);
+			//note on
+			mm = new ShortMessage();
+			pitch += array.get(i);
+			mm.setMessage(0x90 ,pitch, 0x60);
+			me = new MidiEvent(mm,(long) (i) * 1000);
+			t.add(me);
+			///note off
+			mm = new ShortMessage();
+			mm.setMessage(0x80 ,pitch, 0x40);
+			me = new MidiEvent(mm,(long) (i+0.5) * 1000);
+			t.add(me);
+			
+			//test using middle C
+			/*mm = new ShortMessage();
+			mm.setMessage(0x90,0x3C,0x60);
+			me = new MidiEvent(mm,(long)1);
+			t.add(me);
+			
+			mm = new ShortMessage();
+			mm.setMessage(0x80,0x3C,0x40);
+			me = new MidiEvent(mm,(long)121);
+			t.add(me);*/
+			
+			
+			
+		}
+		
+		
+		//set end of track
+		mt = new MetaMessage();
+        byte[] bet = {}; // empty array
+		mt.setMessage(0x2F,bet,0);
+		me = new MidiEvent(mt, (long)140);
+		t.add(me);
+		
+		//write the MIDI sequence to a MIDI file
+		File f = new File("/Users/jzhaoaf/Desktop/generatedFile.mid");
+		MidiSystem.write(sequence,1,f);
+	
+		
+		
+		
+		
+		
+		
+		return sequence;
 	}
 
 	private static ArrayList<Integer> generateSequenceArray(String filename) throws FileNotFoundException {
@@ -135,8 +240,8 @@ public class Composer {
 		/*System.out.println("the original  array is "+ lrc);
 		System.out.println("the recombine array is " + verifyArray);
 		System.out.println(verifyArray.size());
-		System.out.println(lrc.size());
-		System.out.println(result.size());*/
+		System.out.println(lrc.size());*/
+		System.out.println("result size" + result.size());
 		
 		
 		return result;
