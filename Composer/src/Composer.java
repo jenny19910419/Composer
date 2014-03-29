@@ -19,29 +19,124 @@ import javax.sound.midi.ShortMessage;
 import javax.sound.midi.SysexMessage;
 import javax.sound.midi.Track;
 
+import Phonetic.WordStruct;
+import jdbm.RecordManager;
+import jdbm.RecordManagerFactory;
+import jdbm.htree.HTree;
+
 
 public class Composer {
 	
 	static String filename; //the filename for generating patterns
-	static String readInPath = " /Users/jzhaoaf/Desktop/";
+	static String readInPath = "/Users/jzhaoaf/Desktop/";
 	static String outputPath;
-	static int MIN = 3;
+	static int MIN = 2;
 	static int MAX = 20;
-	static int THRESHOLD = 15;
+	static int THRESHOLD = 5;
 	static ArrayList <Map<ArrayList<Integer>, ArrayList<Integer> > > patternPools; 
+	static ArrayList <Map<ArrayList<Integer>, ArrayList<Double> > > newPatternPools; 
 	static Sequence sequence;  
 	static MidiPlayer myPlayer;
 	static String lrcFilename; 
 	static int resolution = 480;
+	private static HTree hashtable;
+	public static  HashMap<String, Integer> beatsMap;
+	static String beatFirst;
+	static String beatSecond;
+	static ArrayList<Integer> beatArray;
 	
-	public static void main(String[] args) throws InvalidMidiDataException, IOException {
+	static void beatMap() {
+		beatsMap = new HashMap<String,Integer>();
+		beatsMap.put("2+2+1", 3);
+		beatsMap.put("2+2+2", 3);
+		
+		beatsMap.put("4+1+1", 3);
+		
+		beatsMap.put("4+2+1", 3);
+		beatsMap.put("4+2+2", 1);
+		
+		beatsMap.put("4+3+1", 3);
+		beatsMap.put("4+3+2", 1);
+		beatsMap.put("4+3+3", 1);
+		
+		beatsMap.put("4+4+1", 3);
+		beatsMap.put("4+4+2", 1);
+		beatsMap.put("4+4+3", 2);
+		beatsMap.put("4+4+4", 1);
+		
+		beatsMap.put("4+5+1", 3);
+		beatsMap.put("4+5+2", 1);
+		beatsMap.put("4+5+3", 3);
+		beatsMap.put("4+5+4", 1);
+		beatsMap.put("4+5+5", 1);
+		
+		beatsMap.put("4+6+1", 3);
+		beatsMap.put("4+6+2", 1);
+		beatsMap.put("4+6+3", 1);
+		beatsMap.put("4+6+4", 2);
+		beatsMap.put("4+6+5", 1);
+		beatsMap.put("4+6+6", 1);
+		
+		beatsMap.put("8+3+1", 3);
+		beatsMap.put("8+3+2", 1);
+		beatsMap.put("8+3+3", 1);
+		
+		beatsMap.put("8+4+1", 3);
+		beatsMap.put("8+4+2", 1);
+		beatsMap.put("8+4+3", 2);
+		beatsMap.put("8+4+4", 1);
+		
+		beatsMap.put("8+6+1", 3);
+		beatsMap.put("8+6+2", 1);
+		beatsMap.put("8+6+3", 1);
+		beatsMap.put("8+6+4", 2);
+		beatsMap.put("8+6+5", 1);
+		beatsMap.put("8+6+6", 1);
+		
+		beatsMap.put("8+12+1", 3);
+		beatsMap.put("8+12+2", 1);
+		beatsMap.put("8+12+3", 1);
+		beatsMap.put("8+12+4", 2);
+		beatsMap.put("8+12+5", 1);
+		beatsMap.put("8+12+6", 1);
+		beatsMap.put("8+12+7", 2);
+		beatsMap.put("8+12+8", 1);
+		beatsMap.put("8+12+9", 1);
+		beatsMap.put("8+12+10", 2);
+		beatsMap.put("8+12+11", 1);
+		beatsMap.put("8+12+12", 1);
+	}
+	public static void main(String[] args) throws IOException, InvalidMidiDataException {
+		//prepare beatMap
+		beatMap();
+		new Composer("4", "6");
+	}
+	
+	Composer(String beatFirst, String beatSecond) throws IOException, InvalidMidiDataException {
 
 		//initialize the patternPools
 		patternPools = new  ArrayList<Map<ArrayList<Integer>, ArrayList<Integer> > >();
+		newPatternPools = new ArrayList<Map<ArrayList<Integer>, ArrayList<Double> > >();
+		
 		for(int i = 0 ; i < MIN; ++i) {
 			patternPools.add(new HashMap<ArrayList<Integer>, ArrayList<Integer> >());
+			newPatternPools.add(new HashMap<ArrayList<Integer>, ArrayList<Double> >());
+			
 		}
 		
+		//ini
+		this.beatFirst = beatFirst;
+		this.beatSecond = beatSecond;
+		//take use of beat information
+				beatArray = new ArrayList<Integer>();
+				
+				for(int i = 1; i <= Integer.parseInt(beatSecond); ++i) {
+					if(beatsMap.get(beatFirst+"+"+beatSecond+"+"+i)==null) 
+						System.out.println("does not exist this type");
+					else 
+						beatArray.add(beatsMap.get(beatFirst+"+"+beatSecond+"+"+i));
+					
+				}
 		
 		try {
 			singleTest();
@@ -59,9 +154,11 @@ public class Composer {
 			System.out.println(map.size());
 			
 		}*/
-		
+		int start = 0;
 		//batchTest(new Folder());
 		ArrayList<Integer> sequenceArray = generateSequenceArray(filename);
+		
+		
 		sequence = generateSequence(sequenceArray);
 		
 		//test
@@ -120,18 +217,23 @@ public class Composer {
 		
 		//middle part
 		int pitch = 0x3C;  //start with middle C
+		int start = 0;
 		for(int i = 0; i < array.size(); ++i) {
 			
 			//System.out.println("get into here" + i);
 			//note on
 			mm = new ShortMessage();
-			pitch += array.get(i);
-			mm.setMessage(0x90 ,pitch, 0x60);
+			pitch += array.get(i); 
+			mm.setMessage(0x90 ,pitch + beatArray.get(start), 0x60);
+			//System.out.println(pitch);
+			//System.out.println(pitch + beatArray.get(start));
+			start = (1+ start) % Integer.parseInt(beatSecond);
 			me = new MidiEvent(mm,(long) (i) * 1000);
 			t.add(me);
 			///note off
 			mm = new ShortMessage();
-			mm.setMessage(0x80 ,pitch, 0x40);
+			mm.setMessage(0x80 ,pitch + beatArray.get(start) , 0x40);
+			start = (1+ start) % Integer.parseInt(beatSecond);
 			me = new MidiEvent(mm,(long) (i+0.5) * 1000);
 			t.add(me);
 			
@@ -159,23 +261,54 @@ public class Composer {
 		t.add(me);
 		
 		//write the MIDI sequence to a MIDI file
-		File f = new File("/Users/jzhaoaf/Desktop/generatedFile.mid");
+		File f = new File("/Users/jenny/Desktop/generatedFile.mid");
 		MidiSystem.write(sequence,1,f);
-	
-		
-		
-		
-		
-		
-		
 		return sequence;
 	}
 
-	private static ArrayList<Integer> generateSequenceArray(String filename) throws FileNotFoundException {
+	private static ArrayList<Integer> parseLrc(String str) throws IOException {
+		ArrayList<Integer> result = new ArrayList<Integer>();
+		
+		str.replace("[^a-zA-Z]", "");
+		
+		
+		RecordManager recman = RecordManagerFactory.createRecordManager("Dictionary");
+		long recid = recman.getNamedObject("Dictionary");
+		if(recid!=0) {
+          	hashtable  = HTree.load(recman, recid);
+          	System.out.println("can open dictionary");
+          }
+          else {
+          	hashtable = HTree.createInstance(recman);
+          	recman.setNamedObject("Dictionary", hashtable.getRecid());
+          }
+		
+		String[] strArray = str.split(" ");   //to be modified here
+		
+		for(String current: strArray) {
+			WordStruct ws = (WordStruct) hashtable.get(current.toUpperCase());
+			if(ws==null)
+				result.add(new Integer(99));
+			else {
+				String stress = ws.stress;
+				for(int i = 0;i < stress.length();++i) {
+					result.add(Integer.parseInt(stress.substring(i, i+1)));
+				}
+			}
+		}
+		
+		return result;
+		
+	}
+	
+	private static ArrayList<Integer> generateSequenceArray(String filename) throws IOException {
 		// TODO Auto-generated method stub
 		//generate sequence for lrc files
 		ArrayList<Integer> lrc = new ArrayList<Integer>();
 		ArrayList<Integer> melo = new ArrayList<Integer>();
+		
+		
+		
 		
 		ArrayList<Integer> result = new ArrayList<Integer>();
 		//suppose given lrc sequence; change later
@@ -184,8 +317,9 @@ public class Composer {
 			lrc.add(new Integer(random.nextInt(8)));
 		}*/
 		
-		ArrayList<Integer> lrcTemp = verify("/Users/jzhaoaf/Desktop/50_cent-in_da_club.txt");
+		ArrayList<Integer> lrcTemp = verify("/Users/jenny/Desktop/output/50_cent-in_da_club.txt");
 		ArrayList<Integer> verifyArray = new ArrayList<Integer>();
+		//verifyArray = parseLrc("apple is good");
 		
 		//calculate the relative value
 		//System.out.println(lrcTemp.size());
@@ -197,6 +331,7 @@ public class Composer {
 	
 		int startPos = 0;
 		int sum = 0;
+		int beatIndex=0;
 		
 		while(startPos < lrc.size() - MIN) {
 			
@@ -221,6 +356,11 @@ public class Composer {
 					verifyArray.addAll(temp);
 					find = true;
 					sum+=i+1;
+					/*for(int k=0;k<searchResult.size();++k) {  
+						int tempNum = searchResult.get(k);
+						searchResult.set(k,	tempNum + beatArray.get(beatIndex));
+						beatIndex = (beatIndex+1) % Integer.parseInt(beatSecond);
+					}*/
 					result.addAll(searchResult);
 					break;
 				}
@@ -233,15 +373,18 @@ public class Composer {
 			if(find == false) {
 				//System.out.println("not found for all size");
 				startPos++;
+				//result.add(new Integer(0) + beatArray.get(beatIndex));
+				//beatIndex = (beatIndex+1) % Integer.parseInt(beatSecond);
 				result.add(new Integer(0));
 				verifyArray.add(new Integer(0));
 			}
 		}
-		/*System.out.println("the original  array is "+ lrc);
-		System.out.println("the recombine array is " + verifyArray);
-		System.out.println(verifyArray.size());
-		System.out.println(lrc.size());*/
-		System.out.println("result size" + result.size());
+		//System.out.println("the original  array is "+ lrc);
+		//System.out.println("the recombine array is " + verifyArray);
+		//System.out.println("the genrated aray is" + result);
+		//System.out.println(verifyArray.size());
+		//System.out.println(lrc.size());
+		//System.out.println("result size" + result.size());
 		
 		
 		return result;
@@ -267,62 +410,31 @@ public class Composer {
 		return result;
 	}
 
-	public static String lcs(String a, String b) {
-	    int[][] lengths = new int[a.length()+1][b.length()+1];
-	 
-	    // row 0 and column 0 are initialized to 0 already
-	 
-	    for (int i = 0; i < a.length(); i++)
-	        for (int j = 0; j < b.length(); j++)
-	            if (a.charAt(i) == b.charAt(j))
-	                lengths[i+1][j+1] = lengths[i][j] + 1;
-	            else
-	                lengths[i+1][j+1] =
-	                    Math.max(lengths[i+1][j], lengths[i][j+1]);
-	 
-	    // read the substring out from the matrix
-	    StringBuffer sb = new StringBuffer();
-	    for (int x = a.length(), y = b.length();
-	         x != 0 && y != 0; ) {
-	        if (lengths[x][y] == lengths[x-1][y])
-	            x--;
-	        else if (lengths[x][y] == lengths[x][y-1])
-	            y--;
-	        else {
-	            assert a.charAt(x-1) == b.charAt(y-1);
-	            sb.append(a.charAt(x-1));
-	            x--;
-	            y--;
-	        }
-	    }
-	 
-	    return sb.reverse().toString();
-	}
-
+	
 	private static void singleTest() throws FileNotFoundException {
 		// TODO Auto-generated method stub
-		readInPatterns("/Users/jzhaoaf/Desktop/allPattern4.txt");
+		readInPatterns("/Users/jenny/Desktop/allPattern.txt");
+		readInNewPatterns("/Users/jenny/Desktop/allPatternDuration.txt");
 	}
 
 	private static void readInPatterns(String filename) throws FileNotFoundException {
 		// TODO Auto-generated method stub
-		
 		Scanner s = new Scanner(new File(filename));
 		String line;
 		ArrayList<Integer> lrc = new ArrayList<Integer>();
 		ArrayList<Integer> melo = new ArrayList<Integer>();
 		//SequencePair currentSeq = null;
 		Map<ArrayList<Integer>, ArrayList<Integer> > currentMap = new HashMap<ArrayList<Integer>, ArrayList<Integer> > ();
-		
+
 		int size = MIN;
-	
-		
+
+
 		while(s.hasNextLine()) {
-			
+
 			lrc = new ArrayList<Integer>();
 			melo = new ArrayList<Integer>();
-			
-			
+
+
 			line = s.nextLine();
 			if(line.charAt(0)!='{') {
 				if(line.indexOf("size:")!=-1) {
@@ -332,6 +444,82 @@ public class Composer {
 					//System.out.println(currentMap);
 					patternPools.add(currentMap);
 					currentMap = new HashMap<ArrayList<Integer>, ArrayList<Integer> > ();
+
+				}
+
+				continue;
+			}
+			line = line.substring(1, line.length()-1);
+			//System.out.println(line);
+			int beginIndex, endIndex,comma;
+			String currentPair, first, second;
+
+
+			while(true) {
+
+				beginIndex = line.indexOf('{');
+				endIndex = line.indexOf('}');
+				if(beginIndex == -1) break;
+				currentPair = line.substring(beginIndex+1,endIndex);
+				//System.out.println(currentPair+ " ");
+				comma = currentPair.indexOf(',');
+				first = currentPair.substring(0,comma);
+				second = currentPair.substring(comma+1);
+				lrc.add(new Integer(Integer.parseInt(first)));
+				melo.add(new Integer(Integer.parseInt(second)));
+				line = line.substring(endIndex+1); 
+			}
+
+			//currentSeq = new SequencePair(lrc,melo);
+			//System.out.println(currentSeq.lrcSeq);
+			//System.out.println(currentSeq.meloSeq);
+
+			//if use maps there will overlap
+			currentMap.put(lrc, melo);	
+
+
+		}
+
+		//test 
+		//System.out.println("final");
+		//System.out.println(patternPools.get(4));
+		/*for(int i = 0 ; i <= 4; ++i) {
+			System.out.println("size is " + i);
+			Map<ArrayList<Integer>, ArrayList<Integer> > map = patternPools.get(i);
+			System.out.println(map);
+			System.out.println(map.size());
+			
+		}*/
+	}
+	
+	private static void readInNewPatterns(String filename) throws FileNotFoundException {
+		// TODO Auto-generated method stub
+		
+		Scanner s = new Scanner(new File(filename));
+		String line;
+		ArrayList<Integer> melo = new ArrayList<Integer>();
+		ArrayList<Double> dur = new ArrayList<Double>();
+		//SequencePair currentSeq = null;
+		Map<ArrayList<Integer>, ArrayList<Double> > currentMap = new HashMap<ArrayList<Integer>, ArrayList<Double> > ();
+		
+		int size = MIN;
+	
+		
+		while(s.hasNextLine()) {
+			
+			melo = new ArrayList<Integer>();
+			dur = new ArrayList<Double>();
+			
+			
+			line = s.nextLine();
+			if(line.charAt(0)!='{') {
+				if(line.indexOf("size:")!=-1) {
+					int index = line.indexOf(':');
+					size = Integer.parseInt(line.substring(index+1));
+					//System.out.println("Currently Checking " + size);
+					//System.out.println(currentMap);
+					newPatternPools.add(currentMap);
+					currentMap = new HashMap<ArrayList<Integer>, ArrayList<Double> > ();
 					
 				}
 					
@@ -353,8 +541,8 @@ public class Composer {
 				comma = currentPair.indexOf(',');
 				first = currentPair.substring(0,comma);
 				second = currentPair.substring(comma+1);
-				lrc.add(new Integer(Integer.parseInt(first)));
-				melo.add(new Integer(Integer.parseInt(second)));
+				melo.add(new Integer(Integer.parseInt(first)));
+				dur.add(new Double(Double.parseDouble(second)));
 				line = line.substring(endIndex+1); 
 			}
 			
@@ -363,16 +551,14 @@ public class Composer {
 			//System.out.println(currentSeq.meloSeq);
 			
 			//if use maps there will overlap
-			currentMap.put(lrc, melo);	
-		
-			
+			currentMap.put(melo, dur);	
 		}
 		
 		//test 
 		//System.out.println("final");
 		//System.out.println(patternPools.get(4));
 		/*for(int i = 0 ; i <= MAX; ++i) {
-			Map<ArrayList<Integer>, ArrayList<Integer> > map = patternPools.get(i);
+			Map<ArrayList<Integer>, ArrayList<Double> > map = newPatternPools.get(i);
 			System.out.println(map);
 			System.out.println(map.size());
 			
