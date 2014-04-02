@@ -167,6 +167,7 @@ public class Composer {
     	   jasonResult = jasonResult +  "{keys:" + sequenceArray.get(i)+"," +"duration:" + 8 +"},";
  
        }
+       jasonResult = jasonResult.substring(0, jasonResult.length()-1);
        jasonResult+="]";
        System.out.println(jasonResult);
        
