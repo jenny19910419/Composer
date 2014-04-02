@@ -44,6 +44,7 @@ public class Composer {
 	static String beatFirst;
 	static String beatSecond;
 	static ArrayList<Integer> beatArray;
+	static String jasonResult;
 	
 	static void beatMap() {
 		beatsMap = new HashMap<String,Integer>();
@@ -118,10 +119,9 @@ public class Composer {
 		patternPools = new  ArrayList<Map<ArrayList<Integer>, ArrayList<Integer> > >();
 		newPatternPools = new ArrayList<Map<ArrayList<Integer>, ArrayList<Double> > >();
 		
-		for(int i = 0 ; i < MIN; ++i) {
+		for(int i = 0 ; i < MAX; ++i) {
 			patternPools.add(new HashMap<ArrayList<Integer>, ArrayList<Integer> >());
 			newPatternPools.add(new HashMap<ArrayList<Integer>, ArrayList<Double> >());
-			
 		}
 		
 		//ini
@@ -157,6 +157,20 @@ public class Composer {
 		int start = 0;
 		//batchTest(new Folder());
 		ArrayList<Integer> sequenceArray = generateSequenceArray(filename);
+		//System.out.println(sequenceArray);
+        //ArrayList<Integer> newSequenceArray = sequenceArray; //fake here change later
+        
+       jasonResult = "[";
+ 
+       
+       for(int i = 0; i < sequenceArray.size(); ++i) {
+    	   jasonResult = jasonResult +  "{keys:" + sequenceArray.get(i)+"," +"duration:" + 8 +"},";
+ 
+       }
+       jasonResult+="]";
+       System.out.println(jasonResult);
+       
+		
 		
 		
 		sequence = generateSequence(sequenceArray);
