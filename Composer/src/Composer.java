@@ -45,6 +45,7 @@ public class Composer {
 	static String beatSecond;
 	static ArrayList<Integer> beatArray;
 	static String jasonResult;
+	static String str; //input
 	
 	static void beatMap() {
 		beatsMap = new HashMap<String,Integer>();
@@ -110,11 +111,12 @@ public class Composer {
 	public static void main(String[] args) throws IOException, InvalidMidiDataException {
 		//prepare beatMap
 		beatMap();
-		new Composer("4", "6");
+		new Composer("today is a good day");
 	}
 	
-	Composer(String beatFirst, String beatSecond) throws IOException, InvalidMidiDataException {
+	Composer(String input) throws IOException, InvalidMidiDataException {
 
+		str = input;
 		//initialize the patternPools
 		patternPools = new  ArrayList<Map<ArrayList<Integer>, ArrayList<Integer> > >();
 		newPatternPools = new ArrayList<Map<ArrayList<Integer>, ArrayList<Double> > >();
@@ -125,8 +127,8 @@ public class Composer {
 		}
 		
 		//ini
-		this.beatFirst = beatFirst;
-		this.beatSecond = beatSecond;
+		this.beatFirst = Integer.toString(4);
+		this.beatSecond = Integer.toString(4);
 		//take use of beat information
 				beatArray = new ArrayList<Integer>();
 				
@@ -156,10 +158,11 @@ public class Composer {
 		}*/
 		int start = 0;
 		//batchTest(new Folder());
-		ArrayList<Integer> sequenceArray = generateSequenceArray(filename);
+		//ArrayList<Integer> sequenceArray = generateSequenceArray(filename);
 		//System.out.println(sequenceArray);
         //ArrayList<Integer> newSequenceArray = sequenceArray; //fake here change later
-        
+		ArrayList<Integer> sequenceArray = parseLrc();
+		
        jasonResult = "[";
  
        
@@ -281,7 +284,7 @@ public class Composer {
 		return sequence;
 	}
 
-	private static ArrayList<Integer> parseLrc(String str) throws IOException {
+	private static ArrayList<Integer> parseLrc() throws IOException {
 		ArrayList<Integer> result = new ArrayList<Integer>();
 		
 		str.replace("[^a-zA-Z]", "");
